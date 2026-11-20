@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Meu Planejador de Exercícios</title>
+<title>Wellness Planner</title>
 <style>
 :root{--bg:#f5f6f8;--panel:#fff;--ink:#242630;--muted:#707482;--line:#e3e5eb;--accent:#5265a8;--accent-soft:#eef0fa;--danger:#b44343;--shadow:0 8px 28px rgba(30,35,55,.06)}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
@@ -34,7 +34,7 @@ footer{max-width:1100px;margin:0 auto;padding:0 18px 30px;color:var(--muted);fon
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1>Meu planejador de exercícios</h1><p>Organize sua rotina por categorias e dias da semana.</p></div></header>
+<header><div class="wrap"><h1>Wellness Planner</h1><p>Organize sua rotina por categorias e dias da semana.</p></div></header>
 <main>
   <div class="toolbar">
     <div class="view-switch" role="group" aria-label="Tipo de visualização">
@@ -61,13 +61,13 @@ footer{max-width:1100px;margin:0 auto;padding:0 18px 30px;color:var(--muted);fon
 </div>
 <script>
 (() => {
-const DAYS=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+const DAYS=['Segu','Ter','Qua','Qui','Sex','Sab','Dom'];
 const KEY='meuPlanejadorExercicios_v1';
 const starter=[
  {id:makeId(),name:'Força',items:[]},
  {id:makeId(),name:'Mobilidade',items:[
-  {id:makeId(),name:'Rotação de braço',note:'Rotacionar os braços para frente e para trás 10 vezes',link:'https://exemplo.com',days:['Segunda','Quarta','Sexta']},
-  {id:makeId(),name:'Rotação de punho',note:'Rotacionar os punhos 10 vezes',link:'https://exemplo.com',days:['Segunda','Quarta','Sexta']}
+  {id:makeId(),name:'Rotação de braço',note:'Rotacionar os braços para frente e para trás 10 vezes',link:'https://exemplo.com',days:['Seg','Qua','Sex']},
+  {id:makeId(),name:'Rotação de punho',note:'Rotacionar os punhos 10 vezes',link:'https://exemplo.com',days:['Seg','Qua','Sex']}
  ]},
  {id:makeId(),name:'Alongamento',items:[]},{id:makeId(),name:'Yoga',items:[]},{id:makeId(),name:'Postura',items:[]}
 ];
