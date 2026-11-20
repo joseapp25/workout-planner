@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Planejador de Exercícios</title>
+<style>
+:root{--bg:#f5f6f8;--panel:#fff;--ink:#242630;--muted:#707482;--line:#e3e5eb;--accent:#5265a8;--accent-soft:#eef0fa;--danger:#b44343;--shadow:0 8px 28px rgba(30,35,55,.06)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif}
+header{padding:34px 22px 24px;background:var(--panel);border-bottom:1px solid var(--line)}.wrap{max-width:1100px;margin:auto}
+h1{font-size:clamp(25px,4vw,34px);margin:0 0 5px;letter-spacing:-.6px}header p{margin:0;color:var(--muted)}
+main{max-width:1100px;margin:25px auto;padding:0 18px 50px}
+.toolbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:18px}
+.view-switch{display:flex;padding:4px;background:#e9eaf0;border-radius:11px;gap:3px}.view-btn{border:0;background:transparent;border-radius:8px;padding:8px 13px;color:#626675;font:inherit;cursor:pointer}.view-btn.active{background:white;color:var(--accent);font-weight:700;box-shadow:0 1px 4px #0001}
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}.day-btn,button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:9px 13px;font:inherit;cursor:pointer}
+.day-btn.active{background:var(--accent-soft);border-color:#c7ccef;color:var(--accent);font-weight:650}
+button.primary{background:var(--accent);border-color:var(--accent);color:white}button.danger{color:var(--danger)}button.small{padding:6px 9px;font-size:13px}button:hover,.day-btn:hover,.view-btn:hover{filter:brightness(.97)}
+.category,.day-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin:14px 0;box-shadow:var(--shadow);overflow:hidden}
+.cat-head,.day-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border-bottom:1px solid var(--line)}
+.cat-title,.day-title{font-size:18px;font-weight:700}.cat-actions{display:flex;gap:7px;flex-wrap:wrap}
+.exercise-list{padding:5px 17px 15px}.exercise{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(180px,1.6fr) minmax(130px,1fr) auto;gap:14px;align-items:start;padding:13px 0;border-bottom:1px solid var(--line)}
+.exercise:last-child{border-bottom:0}.ex-name{font-weight:650}.ex-note,.ex-link{font-size:14px;color:var(--muted);overflow-wrap:anywhere}.ex-link a{color:var(--accent);text-decoration:none}.ex-days{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.tag{font-size:11px;padding:2px 6px;border-radius:5px;background:#f0f1f4;color:#626675}
+.empty{padding:18px 0;color:var(--muted);font-size:14px}.muted{color:var(--muted);font-size:13px}
+.day-category{padding:12px 17px;border-bottom:1px solid var(--line)}.day-category:last-child{border-bottom:0}.day-category-name{font-weight:700;color:var(--accent);margin-bottom:5px}
+.day-exercise{display:flex;gap:10px;align-items:flex-start;padding:8px 0}.day-exercise+.day-exercise{border-top:1px dashed var(--line)}.day-exercise-main{flex:1;min-width:0}.day-exercise .ex-note{margin-top:2px}.day-exercise a{font-size:13px;color:var(--accent);text-decoration:none}
+.modal-backdrop{position:fixed;inset:0;background:rgba(20,22,30,.42);display:none;align-items:center;justify-content:center;padding:16px;z-index:5}.modal-backdrop.open{display:flex}
+.modal{width:min(540px,100%);max-height:90vh;overflow:auto;background:white;border-radius:15px;padding:22px;box-shadow:0 20px 60px #0003}
+.modal h2{margin:0 0 17px;font-size:21px}.field{display:block;margin:12px 0}.field span{display:block;font-size:13px;font-weight:650;margin-bottom:5px}.field input,.field textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px;font:inherit;background:#fff;color:var(--ink)}.field textarea{min-height:82px;resize:vertical}
+.days{display:flex;gap:7px;flex-wrap:wrap}.days label{font-size:13px;background:#f3f4f7;padding:6px 9px;border-radius:7px}.days input{accent-color:var(--accent)}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+footer{max-width:1100px;margin:0 auto;padding:0 18px 30px;color:var(--muted);font-size:12px}
+@media(max-width:760px){.exercise{grid-template-columns:1fr 1fr}.exercise .ex-actions{grid-column:1/-1}}
+@media(max-width:520px){.toolbar{align-items:flex-start}.exercise{grid-template-columns:1fr}.cat-head,.day-head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><h1>Meu planejador de exercícios</h1><p>Organize sua rotina por categorias e dias da semana.</p></div></header>
+<main>
+  <div class="toolbar">
+    <div class="view-switch" role="group" aria-label="Tipo de visualização">
+      <button class="view-btn active" id="categoryViewBtn">Por categoria</button>
+      <button class="view-btn" id="dayViewBtn">Por dia da semana</button>
+    </div>
+    <button class="primary" id="addCategory">＋ Nova categoria</button>
+  </div>
+  <div id="dayFilters" class="filters" aria-label="Filtrar por dia"></div>
+  <div id="content"></div>
+</main>
+<footer>Seus dados ficam salvos neste navegador e dispositivo. Evite limpar os dados do navegador se quiser manter sua rotina.</footer>
+<div class="modal-backdrop" id="modalBackdrop">
+  <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h2 id="modalTitle">Adicionar exercício</h2>
+    <form id="itemForm">
+      <label class="field"><span>Nome do exercício</span><input id="name" required maxlength="100" placeholder="Ex.: Rotação de braço"></label>
+      <label class="field"><span>Nota / instruções</span><textarea id="note" maxlength="1000" placeholder="Ex.: Rotacionar os braços para frente e para trás 10 vezes"></textarea></label>
+      <label class="field"><span>Link (opcional)</span><input id="link" type="url" placeholder="https://exemplo.com"></label>
+      <div class="field"><span>Dias da semana</span><div class="days" id="dayChoices"></div></div>
+      <div class="modal-actions"><button type="button" id="cancelModal">Cancelar</button><button class="primary" type="submit">Salvar exercício</button></div>
+    </form>
+  </section>
+</div>
+<script>
+(() => {
+const DAYS=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+const KEY='meuPlanejadorExercicios_v1';
+const starter=[
+ {id:makeId(),name:'Força',items:[]},
+ {id:makeId(),name:'Mobilidade',items:[
+  {id:makeId(),name:'Rotação de braço',note:'Rotacionar os braços para frente e para trás 10 vezes',link:'https://exemplo.com',days:['Segunda','Quarta','Sexta']},
+  {id:makeId(),name:'Rotação de punho',note:'Rotacionar os punhos 10 vezes',link:'https://exemplo.com',days:['Segunda','Quarta','Sexta']}
+ ]},
+ {id:makeId(),name:'Alongamento',items:[]},{id:makeId(),name:'Yoga',items:[]},{id:makeId(),name:'Postura',items:[]}
+];
+function makeId(){return crypto.randomUUID?crypto.randomUUID():String(Date.now()+Math.random())}
+let categories=load(), view='category', selectedDay='Todos', editing=null;
+function load(){try{const v=JSON.parse(localStorage.getItem(KEY));return Array.isArray(v)?v:starter}catch{return starter}}
+function save(){localStorage.setItem(KEY,JSON.stringify(categories))}
+function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function render(){
+ document.getElementById('categoryViewBtn').classList.toggle('active',view==='category');
+ document.getElementById('dayViewBtn').classList.toggle('active',view==='day');
+ const filters=document.getElementById('dayFilters');
+ filters.style.display=view==='category'?'flex':'none';
+ filters.innerHTML=['Todos',...DAYS].map(d=>`<button class="day-btn ${selectedDay===d?'active':''}" data-day="${d}">${d}</button>`).join('');
+ filters.querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedDay=b.dataset.day;render()});
+ if(view==='category')renderCategories();else renderDays();
+}
+function exerciseMarkup(item, showDays=true){
+ return `<article class="exercise"><div><div class="ex-name">${esc(item.name)}</div>${showDays?`<div class="ex-days">${(item.days||[]).map(d=>`<span class="tag">${d}</span>`).join('')}</div>`:''}</div><div class="ex-note">${esc(item.note||'—')}</div><div class="ex-link">${item.link?`<a href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">Abrir link ↗</a>`:'—'}</div><div class="ex-actions"><button class="small" data-edit="${item.catId}|${item.id}">Editar</button> <button class="small danger" data-delete="${item.catId}|${item.id}">Excluir</button></div></article>`;
+}
+function bindItemActions(root){
+ root.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const [c,i]=b.dataset.edit.split('|');openItem(c,i)});
+ root.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteItem(...b.dataset.delete.split('|')));
+}
+function renderCategories(){
+ const root=document.getElementById('content');
+ root.innerHTML=categories.map(cat=>{
+  const items=cat.items.filter(x=>selectedDay==='Todos'||(x.days||[]).includes(selectedDay)).map(x=>({...x,catId:cat.id}));
+  return `<section class="category"><div class="cat-head"><div><div class="cat-title">${esc(cat.name)}</div><div class="muted">${cat.items.length} exercício(s)</div></div><div class="cat-actions"><button class="small" data-add="${cat.id}">＋ Exercício</button><button class="small" data-rename="${cat.id}">Renomear</button><button class="small danger" data-remove="${cat.id}">Remover</button></div></div><div class="exercise-list">${items.length?items.map(x=>exerciseMarkup(x)).join(''):`<div class="empty">${cat.items.length?'Nenhum exercício para este dia.':'Ainda não há exercícios nesta categoria.'}</div>`}</div></section>`;
+ }).join('')||'<p class="empty">Nenhuma categoria cadastrada. Adicione uma para começar.</p>';
+ root.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openItem(b.dataset.add));
+ root.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>renameCategory(b.dataset.rename));
+ root.querySelectorAll('[data-remove]').forEach(b=>b.onclick=()=>removeCategory(b.dataset.remove));
+ bindItemActions(root);
+}
+function renderDays(){
+ const root=document.getElementById('content');
+ root.innerHTML=DAYS.map(day=>{
+  const groups=categories.map(cat=>({cat,items:cat.items.filter(x=>(x.days||[]).includes(day))})).filter(g=>g.items.length);
+  return `<section class="day-panel"><div class="day-head"><div><div class="day-title">${day}-feira</div><div class="muted">${groups.reduce((n,g)=>n+g.items.length,0)} exercício(s) programado(s)</div></div></div>${groups.length?groups.map(g=>`<div class="day-category"><div class="day-category-name">${esc(g.cat.name)}</div>${g.items.map(item=>`<div class="day-exercise"><div class="day-exercise-main"><div class="ex-name">${esc(item.name)}</div>${item.note?`<div class="ex-note">${esc(item.note)}</div>`:''}${item.link?`<a href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">Abrir link ↗</a>`:''}</div><div><button class="small" data-edit="${g.cat.id}|${item.id}">Editar</button> <button class="small danger" data-delete="${g.cat.id}|${item.id}">Excluir</button></div></div>`).join('')}</div>`).join(''):'<div class="empty" style="padding:14px 17px">Nenhum exercício programado para este dia.</div>'}</section>`;
+ }).join('');
+ bindItemActions(root);
+}
+function renameCategory(id){const c=categories.find(x=>x.id===id),n=prompt('Novo nome da categoria:',c.name);if(n&&n.trim()){c.name=n.trim();save();render()}}
+function removeCategory(id){const c=categories.find(x=>x.id===id);if(confirm(`Remover a categoria “${c.name}” e todos os exercícios dela?`)){categories=categories.filter(x=>x.id!==id);save();render()}}
+function deleteItem(cid,iid){const c=categories.find(x=>x.id===cid);if(confirm('Excluir este exercício?')){c.items=c.items.filter(x=>x.id!==iid);save();render()}}
+function openItem(cid,iid=null){
+ const c=categories.find(x=>x.id===cid),item=iid?c.items.find(x=>x.id===iid):null;
+ editing={cid,iid};document.getElementById('modalTitle').textContent=item?'Editar exercício':`Novo exercício — ${c.name}`;
+ document.getElementById('name').value=item?.name||'';document.getElementById('note').value=item?.note||'';document.getElementById('link').value=item?.link||'';
+ document.getElementById('dayChoices').innerHTML=DAYS.map(d=>`<label><input type="checkbox" value="${d}" ${(item?.days||[]).includes(d)?'checked':''}> ${d}</label>`).join('');
+ document.getElementById('modalBackdrop').classList.add('open');document.getElementById('name').focus();
+}
+function closeModal(){document.getElementById('modalBackdrop').classList.remove('open');editing=null}
+document.getElementById('categoryViewBtn').onclick=()=>{view='category';render()};
+document.getElementById('dayViewBtn').onclick=()=>{view='day';render()};
+document.getElementById('addCategory').onclick=()=>{const n=prompt('Nome da nova categoria:');if(n&&n.trim()){categories.push({id:makeId(),name:n.trim(),items:[]});save();render()}};
+document.getElementById('cancelModal').onclick=closeModal;
+document.getElementById('modalBackdrop').onclick=e=>{if(e.target.id==='modalBackdrop')closeModal()};
+document.getElementById('itemForm').onsubmit=e=>{
+ e.preventDefault();if(!editing)return;
+ const c=categories.find(x=>x.id===editing.cid);
+ const data={name:document.getElementById('name').value.trim(),note:document.getElementById('note').value.trim(),link:document.getElementById('link').value.trim(),days:[...document.querySelectorAll('#dayChoices input:checked')].map(x=>x.value)};
+ if(!data.days.length){alert('Selecione pelo menos um dia da semana.');return}
+ if(editing.iid)Object.assign(c.items.find(x=>x.id===editing.iid),data);else c.items.push({id:makeId(),...data});
+ save();closeModal();render();
+};
+render();
+})();
+</script>
+</body></html>
