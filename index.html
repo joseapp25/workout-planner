@@ -15,9 +15,11 @@ main{max-width:1100px;margin:25px auto;padding:0 18px 50px}
 .filters{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}.day-btn,button{border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:9px;padding:9px 13px;font:inherit;cursor:pointer}
 .day-btn.active{background:var(--accent-soft);border-color:#c7ccef;color:var(--accent);font-weight:650}
 button.primary{background:var(--accent);border-color:var(--accent);color:white}button.danger{color:var(--danger)}button.small{padding:6px 9px;font-size:13px}button:hover,.day-btn:hover,.view-btn:hover{filter:brightness(.97)}
+button:disabled{opacity:.35;cursor:default;filter:none}
+.mv{display:inline-flex;gap:3px;margin-right:4px}
 .category,.day-panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;margin:14px 0;box-shadow:var(--shadow);overflow:hidden}
 .cat-head,.day-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border-bottom:1px solid var(--line)}
-.cat-title,.day-title{font-size:18px;font-weight:700}.cat-actions{display:flex;gap:7px;flex-wrap:wrap}
+.cat-title,.day-title{font-size:18px;font-weight:700}.cat-actions{display:flex;gap:7px;flex-wrap:wrap;align-items:center}
 .exercise-list{padding:5px 17px 15px}.exercise{display:grid;grid-template-columns:minmax(150px,1.1fr) minmax(180px,1.6fr) minmax(130px,1fr) auto;gap:14px;align-items:start;padding:13px 0;border-bottom:1px solid var(--line)}
 .exercise:last-child{border-bottom:0}.ex-name{font-weight:650}.ex-note,.ex-link{font-size:14px;color:var(--muted);overflow-wrap:anywhere}.ex-link a{color:var(--accent);text-decoration:none}.ex-days{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}.tag{font-size:11px;padding:2px 6px;border-radius:5px;background:#f0f1f4;color:#626675}
 .empty{padding:18px 0;color:var(--muted);font-size:14px}.muted{color:var(--muted);font-size:13px}
@@ -76,6 +78,26 @@ let categories=load(), view='category', selectedDay='Todos', editing=null;
 function load(){try{const v=JSON.parse(localStorage.getItem(KEY));return Array.isArray(v)?v:starter}catch{return starter}}
 function save(){localStorage.setItem(KEY,JSON.stringify(categories))}
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+/* Botões de reordenar. key = "catId|itemId|dia" (itemId e dia vazios para categorias) */
+function moveBtns(kind,key,i,n){
+ return `<span class="mv"><button class="small" data-mv="${kind}|${key}|-1" aria-label="Mover para cima" title="Mover para cima" ${i===0?'disabled':''}>↑</button><button class="small" data-mv="${kind}|${key}|1" aria-label="Mover para baixo" title="Mover para baixo" ${i===n-1?'disabled':''}>↓</button></span>`;
+}
+function move(kind,cid,iid,day,dir){
+ if(kind==='cat'){
+  const i=categories.findIndex(x=>x.id===cid),j=i+dir;
+  if(i<0||j<0||j>=categories.length)return;
+  [categories[i],categories[j]]=[categories[j],categories[i]];
+ }else{
+  const c=categories.find(x=>x.id===cid);if(!c)return;
+  // troca com o vizinho visível (respeita o filtro de dia ativo)
+  const vis=c.items.filter(x=>!day||day==='Todos'||(x.days||[]).includes(day));
+  const k=vis.findIndex(x=>x.id===iid),t=vis[k+dir];
+  if(k<0||!t)return;
+  const a=c.items.indexOf(vis[k]),b=c.items.indexOf(t);
+  [c.items[a],c.items[b]]=[c.items[b],c.items[a]];
+ }
+ save();render();
+}
 function render(){
  document.getElementById('categoryViewBtn').classList.toggle('active',view==='category');
  document.getElementById('dayViewBtn').classList.toggle('active',view==='day');
@@ -85,18 +107,19 @@ function render(){
  filters.querySelectorAll('button').forEach(b=>b.onclick=()=>{selectedDay=b.dataset.day;render()});
  if(view==='category')renderCategories();else renderDays();
 }
-function exerciseMarkup(item, showDays=true){
- return `<article class="exercise"><div><div class="ex-name">${esc(item.name)}</div>${showDays?`<div class="ex-days">${(item.days||[]).map(d=>`<span class="tag">${d}</span>`).join('')}</div>`:''}</div><div class="ex-note">${esc(item.note||'—')}</div><div class="ex-link">${item.link?`<a href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">Abrir link ↗</a>`:'—'}</div><div class="ex-actions"><button class="small" data-edit="${item.catId}|${item.id}">Editar</button> <button class="small danger" data-delete="${item.catId}|${item.id}">Excluir</button></div></article>`;
+function exerciseMarkup(item, showDays=true, idx=0, len=1){
+ return `<article class="exercise"><div><div class="ex-name">${esc(item.name)}</div>${showDays?`<div class="ex-days">${(item.days||[]).map(d=>`<span class="tag">${d}</span>`).join('')}</div>`:''}</div><div class="ex-note">${esc(item.note||'—')}</div><div class="ex-link">${item.link?`<a href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">Abrir link ↗</a>`:'—'}</div><div class="ex-actions">${moveBtns('item',`${item.catId}|${item.id}|${selectedDay}`,idx,len)}<button class="small" data-edit="${item.catId}|${item.id}">Editar</button> <button class="small danger" data-delete="${item.catId}|${item.id}">Excluir</button></div></article>`;
 }
 function bindItemActions(root){
  root.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>{const [c,i]=b.dataset.edit.split('|');openItem(c,i)});
  root.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteItem(...b.dataset.delete.split('|')));
+ root.querySelectorAll('[data-mv]').forEach(b=>b.onclick=()=>{const [k,c,i,d,dir]=b.dataset.mv.split('|');move(k,c,i,d,+dir)});
 }
 function renderCategories(){
  const root=document.getElementById('content');
- root.innerHTML=categories.map(cat=>{
+ root.innerHTML=categories.map((cat,ci)=>{
   const items=cat.items.filter(x=>selectedDay==='Todos'||(x.days||[]).includes(selectedDay)).map(x=>({...x,catId:cat.id}));
-  return `<section class="category"><div class="cat-head"><div><div class="cat-title">${esc(cat.name)}</div><div class="muted">${cat.items.length} exercício(s)</div></div><div class="cat-actions"><button class="small" data-add="${cat.id}">＋ Exercício</button><button class="small" data-rename="${cat.id}">Renomear</button><button class="small danger" data-remove="${cat.id}">Remover</button></div></div><div class="exercise-list">${items.length?items.map(x=>exerciseMarkup(x)).join(''):`<div class="empty">${cat.items.length?'Nenhum exercício para este dia.':'Ainda não há exercícios nesta categoria.'}</div>`}</div></section>`;
+  return `<section class="category"><div class="cat-head"><div><div class="cat-title">${esc(cat.name)}</div><div class="muted">${cat.items.length} exercício(s)</div></div><div class="cat-actions">${moveBtns('cat',`${cat.id}||`,ci,categories.length)}<button class="small" data-add="${cat.id}">＋ Exercício</button><button class="small" data-rename="${cat.id}">Renomear</button><button class="small danger" data-remove="${cat.id}">Remover</button></div></div><div class="exercise-list">${items.length?items.map((x,i)=>exerciseMarkup(x,true,i,items.length)).join(''):`<div class="empty">${cat.items.length?'Nenhum exercício para este dia.':'Ainda não há exercícios nesta categoria.'}</div>`}</div></section>`;
  }).join('')||'<p class="empty">Nenhuma categoria cadastrada. Adicione uma para começar.</p>';
  root.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>openItem(b.dataset.add));
  root.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>renameCategory(b.dataset.rename));
@@ -107,7 +130,7 @@ function renderDays(){
  const root=document.getElementById('content');
  root.innerHTML=DAYS.map(day=>{
   const groups=categories.map(cat=>({cat,items:cat.items.filter(x=>(x.days||[]).includes(day))})).filter(g=>g.items.length);
-  return `<section class="day-panel"><div class="day-head"><div><div class="day-title">${day}</div><div class="muted">${groups.reduce((n,g)=>n+g.items.length,0)} exercício(s) programado(s)</div></div></div>${groups.length?groups.map(g=>`<div class="day-category"><div class="day-category-name">${esc(g.cat.name)}</div>${g.items.map(item=>`<div class="day-exercise"><div class="day-exercise-main"><div class="ex-name">${esc(item.name)}</div>${item.note?`<div class="ex-note">${esc(item.note)}</div>`:''}${item.link?`<a href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">Abrir link ↗</a>`:''}</div><div><button class="small" data-edit="${g.cat.id}|${item.id}">Editar</button> <button class="small danger" data-delete="${g.cat.id}|${item.id}">Excluir</button></div></div>`).join('')}</div>`).join(''):'<div class="empty" style="padding:14px 17px">Nenhum exercício programado para este dia.</div>'}</section>`;
+  return `<section class="day-panel"><div class="day-head"><div><div class="day-title">${day}</div><div class="muted">${groups.reduce((n,g)=>n+g.items.length,0)} exercício(s) programado(s)</div></div></div>${groups.length?groups.map(g=>`<div class="day-category"><div class="day-category-name">${esc(g.cat.name)}</div>${g.items.map((item,ii)=>`<div class="day-exercise"><div class="day-exercise-main"><div class="ex-name">${esc(item.name)}</div>${item.note?`<div class="ex-note">${esc(item.note)}</div>`:''}${item.link?`<a href="${esc(item.link)}" target="_blank" rel="noopener noreferrer">Abrir link ↗</a>`:''}</div><div>${moveBtns('item',`${g.cat.id}|${item.id}|${day}`,ii,g.items.length)}<button class="small" data-edit="${g.cat.id}|${item.id}">Editar</button> <button class="small danger" data-delete="${g.cat.id}|${item.id}">Excluir</button></div></div>`).join('')}</div>`).join(''):'<div class="empty" style="padding:14px 17px">Nenhum exercício programado para este dia.</div>'}</section>`;
  }).join('');
  bindItemActions(root);
 }
